@@ -20,7 +20,11 @@ import {
   TrendingUp,
   TrendingDown,
   IndianRupee,
-  History
+  History,
+  Globe,
+  FileSpreadsheet,
+  FolderUp,
+  FileText
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -39,6 +43,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
@@ -68,6 +73,8 @@ export default function HistoryPage() {
   
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isGoogleDriveModalOpen, setIsGoogleDriveModalOpen] = useState(false);
+  const [exportedFileName, setExportedFileName] = useState('');
 
   // Reprint states
   const [transactionToReprint, setTransactionToReprint] = useState<Transaction | null>(null);
@@ -278,7 +285,7 @@ export default function HistoryPage() {
     }, 500);
   };
 
-  const handleExport = async (formatType: 'csv' | 'excel' | 'pdf') => {
+  const handleExport = async (formatType: 'csv' | 'excel' | 'pdf' | 'googlesheets') => {
     const salesToExport = filteredTransactions.filter(t => t.paymentStatus === 'Paid');
     const expensesToExport = filteredExpenses;
 
@@ -300,6 +307,83 @@ export default function HistoryPage() {
     }
     
     try {
+      if (formatType === 'googlesheets') {
+        const XLSX = await import('xlsx');
+        const fileName = `Google_Sheets_Performance_Report${dateRangeStr}.xlsx`;
+
+        // 1. Executive Summary Sheet
+        const summarySheetData = [
+          ["BUSINESS PERFORMANCE REPORT (GOOGLE SHEETS & DRIVE FORMAT)"],
+          ["Shop / Business Name:", shopProfile?.shopName || "Free Bill App"],
+          ["Export Date:", format(new Date(), 'yyyy-MM-dd HH:mm')],
+          ["Selected Period:", dateRangeStr.replace('_', ' ')],
+          [""],
+          ["METRIC", "VALUE"],
+          ["Total Gross Sales (Rs.)", totalSales],
+          ["Total Operating Expenses (Rs.)", totalExpenses],
+          ["NET PROFIT / LOSS (Rs.)", netProfit],
+          ["Total Completed Transactions", salesToExport.length],
+          ["Average Order Value (Rs.)", salesToExport.length > 0 ? (totalSales / salesToExport.length).toFixed(2) : 0],
+        ];
+        const wsSummary = XLSX.utils.aoa_to_sheet(summarySheetData);
+
+        // 2. Sales Register Sheet
+        const salesSheetData = salesToExport.map(t => ({
+          'Bill Serial No': t.serialNumber || 'N/A',
+          'Date & Time': t.date ? format(new Date(t.date), 'yyyy-MM-dd HH:mm') : 'N/A',
+          'Payment Mode': t.paymentMethod || 'Cash',
+          'Items Breakdown': t.items?.map(i => `${i.name} (x${i.quantity})`).join(', ') || '',
+          'Subtotal (Rs.)': t.total || t.finalAmount,
+          'Discount (Rs.)': t.discount || 0,
+          'Tax / GST (Rs.)': t.gstAmount || 0,
+          'Final Amount (Rs.)': t.finalAmount,
+          'Payment Status': t.paymentStatus
+        }));
+        const wsSales = XLSX.utils.json_to_sheet(salesSheetData);
+
+        // 3. Expenses Register Sheet
+        const expenseSheetData = expensesToExport.map(e => ({
+          'Expense Description': e.description,
+          'Category': e.category,
+          'Date': e.date ? format(new Date(e.date), 'yyyy-MM-dd') : 'N/A',
+          'Amount (Rs.)': e.amount
+        }));
+        const wsExpenses = XLSX.utils.json_to_sheet(expenseSheetData);
+
+        // 4. Product Sales Summary Sheet
+        const itemMap: Record<string, { qty: number; total: number }> = {};
+        salesToExport.forEach(t => {
+          t.items?.forEach(i => {
+            if (!itemMap[i.name]) itemMap[i.name] = { qty: 0, total: 0 };
+            itemMap[i.name].qty += i.quantity;
+            itemMap[i.name].total += (i.price * i.quantity);
+          });
+        });
+        const productSummaryData = Object.entries(itemMap).map(([name, val]) => ({
+          'Product Name': name,
+          'Total Units Sold': val.qty,
+          'Total Revenue (Rs.)': val.total
+        }));
+        const wsProducts = XLSX.utils.json_to_sheet(productSummaryData);
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, wsSummary, "Executive Summary");
+        XLSX.utils.book_append_sheet(wb, wsSales, "Sales Register");
+        XLSX.utils.book_append_sheet(wb, wsExpenses, "Expenses Register");
+        XLSX.utils.book_append_sheet(wb, wsProducts, "Product Sales Summary");
+
+        XLSX.writeFile(wb, fileName);
+
+        setExportedFileName(fileName);
+        setIsExportDialogOpen(false);
+        setIsGoogleDriveModalOpen(true);
+
+        toast({
+          title: "Google Sheets Report Ready",
+          description: "Spreadsheet downloaded in Google Sheets format. Upload to Google Drive to view.",
+        });
+      }
+
       if (formatType === 'csv') {
         const rows: string[][] = [];
         rows.push(["SALES TRANSACTIONS"]);
@@ -694,24 +778,97 @@ export default function HistoryPage() {
       </main>
 
       <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
-        <DialogContent className="print-hidden">
+        <DialogContent className="sm:max-w-md print-hidden">
           <DialogHeader>
-            <DialogTitle>Export Report</DialogTitle>
+            <DialogTitle className="font-headline text-2xl">Export Performance Report</DialogTitle>
             <DialogDescription>
-              Generate a full performance report including Sales and Expenses for the selected period.
+              Generate a full performance report including Sales, Expenses, and Product breakdown.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-3 gap-3 py-4">
-            <Button variant="outline" className="flex flex-col h-20 gap-2" onClick={() => handleExport('pdf')}>
-              <History className="w-5 h-5" /> PDF
+          <div className="grid grid-cols-2 gap-3 py-4">
+            <Button 
+              variant="outline" 
+              className="flex flex-col h-24 gap-2 border-primary/30 bg-primary/5 hover:bg-primary/10 shadow-sm" 
+              onClick={() => handleExport('googlesheets')}
+            >
+              <Globe className="w-6 h-6 text-primary" />
+              <span className="font-bold text-xs">Google Sheets & Drive</span>
+              <span className="text-[10px] text-muted-foreground">Multi-sheet XLSX report</span>
             </Button>
-            <Button variant="outline" className="flex flex-col h-20 gap-2" onClick={() => handleExport('excel')}>
-              <TrendingUp className="w-5 h-5 text-green-600" /> Excel
+            <Button variant="outline" className="flex flex-col h-24 gap-2 shadow-sm" onClick={() => handleExport('excel')}>
+              <FileSpreadsheet className="w-6 h-6 text-green-600" />
+              <span className="font-bold text-xs">Excel (.xlsx)</span>
+              <span className="text-[10px] text-muted-foreground">Standard Spreadsheet</span>
             </Button>
-            <Button variant="outline" className="flex flex-col h-20 gap-2" onClick={() => handleExport('csv')}>
-              <TrendingDown className="w-5 h-5 text-blue-600" /> CSV
+            <Button variant="outline" className="flex flex-col h-24 gap-2 shadow-sm" onClick={() => handleExport('pdf')}>
+              <FileText className="w-6 h-6 text-red-600" />
+              <span className="font-bold text-xs">PDF Document</span>
+              <span className="text-[10px] text-muted-foreground">Printable Report</span>
+            </Button>
+            <Button variant="outline" className="flex flex-col h-24 gap-2 shadow-sm" onClick={() => handleExport('csv')}>
+              <Download className="w-6 h-6 text-blue-600" />
+              <span className="font-bold text-xs">CSV File</span>
+              <span className="text-[10px] text-muted-foreground">Comma Separated Data</span>
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Google Drive Upload & Integration Dialog */}
+      <Dialog open={isGoogleDriveModalOpen} onOpenChange={setIsGoogleDriveModalOpen}>
+        <DialogContent className="sm:max-w-md bg-card text-card-foreground">
+          <DialogHeader>
+            <div className="flex items-center gap-2 text-primary">
+              <Globe className="w-5 h-5" />
+              <DialogTitle>Upload to Google Drive & Google Sheets</DialogTitle>
+            </div>
+            <DialogDescription>
+              Your formatted report <strong>{exportedFileName}</strong> has been downloaded to your computer.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="p-4 bg-muted/30 rounded-xl border space-y-3">
+              <h4 className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Google Drive Quick Actions</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <a
+                  href="https://drive.google.com/drive/my-drive"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex flex-col items-center justify-center p-3 bg-card border rounded-xl hover:border-primary transition-all text-center gap-1.5 shadow-sm group"
+                >
+                  <FolderUp className="w-6 h-6 text-blue-600 group-hover:scale-110 transition-transform" />
+                  <span className="font-bold text-xs">Open Google Drive</span>
+                  <span className="text-[10px] text-muted-foreground">Upload file to Drive</span>
+                </a>
+                <a
+                  href="https://sheets.new"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex flex-col items-center justify-center p-3 bg-card border rounded-xl hover:border-primary transition-all text-center gap-1.5 shadow-sm group"
+                >
+                  <FileSpreadsheet className="w-6 h-6 text-green-600 group-hover:scale-110 transition-transform" />
+                  <span className="font-bold text-xs">New Google Sheet</span>
+                  <span className="text-[10px] text-muted-foreground">Import & edit live</span>
+                </a>
+              </div>
+            </div>
+
+            <div className="space-y-2 text-xs text-muted-foreground bg-primary/5 p-3 rounded-lg border border-primary/20">
+              <p className="font-bold text-foreground">How to import into Google Sheets:</p>
+              <ol className="list-decimal list-inside space-y-1">
+                <li>Click <strong>Open Google Drive</strong> above.</li>
+                <li>Drag and drop the downloaded file <code className="bg-muted px-1 rounded">{exportedFileName}</code> into Drive.</li>
+                <li>Double-click the file in Google Drive to open as Google Sheets with 4 formatted worksheets!</li>
+              </ol>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button onClick={() => setIsGoogleDriveModalOpen(false)} className="w-full font-bold">
+              Done
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
