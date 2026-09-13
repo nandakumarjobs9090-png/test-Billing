@@ -6,7 +6,7 @@ import { MobileNav } from '@/components/layout/MobileNav';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Edit2, Trash2, Inbox, Loader2, ImageIcon, Upload, Link as LinkIcon } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Inbox, Loader2, ImageIcon, Upload } from 'lucide-react';
 import { Product } from '@/lib/types';
 import {
   Dialog,
@@ -246,36 +246,20 @@ export default function CatalogPage() {
                   )}
                 </div>
                 
-                {/* Product Image Section with Paste URL & Device Upload */}
+                {/* Product Image Section - Upload Only */}
                 <div className="grid gap-3 border-t pt-4 mt-2">
-                  <div className="space-y-1">
-                    <Label htmlFor="imageUrl" className="text-sm font-bold flex items-center gap-1.5">
-                      <LinkIcon className="w-4 h-4 text-primary" />
-                      Paste Image URL / Web Link
-                    </Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="imageUrl"
-                        type="url"
-                        placeholder="https://images.unsplash.com/photo-..."
-                        value={formData.imageUrl}
-                        onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
-                        className="text-xs"
-                      />
-                      <Button 
-                        type="button"
-                        variant="outline" 
-                        size="sm" 
-                        className="h-10 text-xs gap-1.5 shrink-0"
-                        onClick={() => fileInputRef.current?.click()}
-                      >
-                        <Upload className="w-3.5 h-3.5" />
-                        Upload File
-                      </Button>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      Paste any web image URL or click Upload File to select an image from your computer.
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-bold">Product Image</Label>
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      size="sm" 
+                      className="h-9 text-xs gap-2 font-bold"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="w-4 h-4 text-primary" />
+                      {formData.imageUrl ? 'Change Image' : 'Upload Image from Device'}
+                    </Button>
                     <input 
                       type="file" 
                       ref={fileInputRef} 
