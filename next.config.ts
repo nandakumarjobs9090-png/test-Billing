@@ -1,14 +1,15 @@
 import type {NextConfig} from 'next';
 
+const isGithubActions = process.env.GITHUB_ACTIONS || false;
+let repo = '';
+if (isGithubActions) {
+  repo = process.env.GITHUB_REPOSITORY?.replace(/.*?\//, '') || '';
+}
+
 const nextConfig: NextConfig = {
-  /* config options here */
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  output: 'export',
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
@@ -30,6 +31,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  basePath: isGithubActions && repo ? `/${repo}` : '',
+  assetPrefix: isGithubActions && repo ? `/${repo}/` : '',
 };
 
 export default nextConfig;
