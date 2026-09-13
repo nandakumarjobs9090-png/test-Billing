@@ -1,0 +1,77 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Stores basic user profile information.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string" },
+        "shopName": { "type": "string" }
+      }
+    },
+    "Product": {
+      "title": "Product",
+      "type": "object",
+      "description": "Represents a tea item or snack available for sale.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "stock": { "type": "number" },
+        "category": { "type": "string" },
+        "imageUrl": { "type": "string" }
+      },
+      "required": ["name", "price", "category"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "type": "object",
+      "description": "Represents a single customer transaction or bill.",
+      "properties": {
+        "id": { "type": "string" },
+        "serialNumber": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "finalAmount": { "type": "number" },
+        "paymentStatus": { "type": "string", "enum": ["Paid", "Cancelled"] },
+        "paymentMethod": { "type": "string", "enum": ["Cash", "UPI"] }
+      }
+    },
+    "Expense": {
+      "title": "Expense",
+      "type": "object",
+      "description": "Represents a business expenditure.",
+      "properties": {
+        "description": { "type": "string" },
+        "amount": { "type": "number" },
+        "category": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous",
+      "google"
+    ]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "#/backend/entities/User",
+      "description": "Root document for a user's private shop data."
+    },
+    "/users/{userId}/products/{productId}": {
+      "schema": "#/backend/entities/Product",
+      "description": "User's private product catalog."
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": "#/backend/entities/Transaction",
+      "description": "User's private transaction records."
+    },
+    "/users/{userId}/expenses/{expenseId}": {
+      "schema": "#/backend/entities/Expense",
+      "description": "User's private expense records."
+    }
+  }
+}

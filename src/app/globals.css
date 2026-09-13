@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 21 38% 97%; /* #FCF8F5 */
+    --foreground: 9 44% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 9 44% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 9 44% 15%;
+    --primary: 9 44% 44%; /* #A34E3F - Terracotta */
+    --primary-foreground: 21 38% 98%;
+    --secondary: 9 20% 92%;
+    --secondary-foreground: 9 44% 20%;
+    --muted: 9 10% 90%;
+    --muted-foreground: 9 20% 40%;
+    --accent: 349 57% 29%; /* #731F2E - Wine Red */
+    --accent-foreground: 21 38% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 9 20% 88%;
+    --input: 9 20% 88%;
+    --ring: 9 44% 44%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-headline;
+  }
+}
+
+@media print {
+  @page {
+    margin: 0;
+    size: auto;
+  }
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    border-color: #e5e7eb !important;
+  }
+  /* Force hide all UI during native print */
+  .print-hidden, nav, aside, header, button, .mobile-nav {
+    display: none !important;
+  }
+  /* Show receipt container */
+  .print-container {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    background: white !important;
+    color: black !important;
+  }
+}

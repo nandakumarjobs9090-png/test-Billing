@@ -1,0 +1,40 @@
+{
+  "placeholderImages": [
+    {
+      "id": "masala-chai",
+      "description": "Traditional Masala Chai",
+      "imageUrl": "https://picsum.photos/seed/chai/400/300",
+      "imageHint": "masala chai"
+    },
+    {
+      "id": "samosa",
+      "description": "Crispy Samosa",
+      "imageUrl": "https://picsum.photos/seed/samosa/400/300",
+      "imageHint": "samosa snack"
+    },
+    {
+      "id": "biscuit",
+      "description": "Butter Biscuits",
+      "imageUrl": "https://picsum.photos/seed/biscuit/400/300",
+      "imageHint": "tea biscuit"
+    },
+    {
+      "id": "coffee",
+      "description": "Filter Coffee",
+      "imageUrl": "https://picsum.photos/seed/coffee/400/300",
+      "imageHint": "filter coffee"
+    },
+    {
+      "id": "sandwich",
+      "description": "Club Sandwich",
+      "imageUrl": "https://picsum.photos/seed/sandwich/400/300",
+      "imageHint": "club sandwich"
+    },
+    {
+      "id": "muffin",
+      "description": "Chocolate Muffin",
+      "imageUrl": "https://picsum.photos/seed/muffin/400/300",
+      "imageHint": "chocolate muffin"
+    }
+  ]
+}
