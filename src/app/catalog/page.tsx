@@ -6,7 +6,7 @@ import { MobileNav } from '@/components/layout/MobileNav';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Edit2, Trash2, Inbox, Loader2, ImageIcon, Upload, Sparkles, Key } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Inbox, Loader2, ImageIcon, Upload, Link as LinkIcon } from 'lucide-react';
 import { Product } from '@/lib/types';
 import {
   Dialog,
@@ -28,8 +28,6 @@ import { collection, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import Image from 'next/image';
-import { AIImageGeneratorModal } from '@/components/AIImageGeneratorModal';
-import { OpenRouterSettingsDialog } from '@/components/OpenRouterSettingsDialog';
 
 const DEFAULT_CATEGORIES = ['Tea', 'Snacks', 'Beverages', 'Combos'];
 
@@ -57,8 +55,6 @@ export default function CatalogPage() {
 
   const [search, setSearch] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-  const [isOpenRouterSettingsOpen, setIsOpenRouterSettingsOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAddingNewCategory, setIsAddingNewCategory] = useState(false);
   const [formData, setFormData] = useState({
@@ -162,20 +158,10 @@ export default function CatalogPage() {
             <h2 className="text-3xl font-headline font-bold">Product Catalog</h2>
             <p className="text-muted-foreground">Manage your product offerings, prices, and stock inventory.</p>
           </div>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setIsOpenRouterSettingsOpen(true)}
-              className="gap-2 font-bold text-xs shadow-sm"
-            >
-              <Key className="w-4 h-4 text-primary" />
-              OpenRouter Key
-            </Button>
-            <Button className="bg-primary hover:bg-primary/90 font-bold gap-2" onClick={handleOpenAdd}>
-              <Plus className="w-4 h-4" />
-              Add New Product
-            </Button>
-          </div>
+          <Button className="bg-primary hover:bg-primary/90 font-bold gap-2" onClick={handleOpenAdd}>
+            <Plus className="w-4 h-4" />
+            Add New Product
+          </Button>
 
           {/* Add / Edit Product Modal */}
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -260,32 +246,36 @@ export default function CatalogPage() {
                   )}
                 </div>
                 
-                {/* Product Image Section with AI Generator Button */}
+                {/* Product Image Section with Paste URL & Device Upload */}
                 <div className="grid gap-3 border-t pt-4 mt-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <Label className="text-sm font-bold">Product Image</Label>
-                    <div className="flex items-center gap-2">
+                  <div className="space-y-1">
+                    <Label htmlFor="imageUrl" className="text-sm font-bold flex items-center gap-1.5">
+                      <LinkIcon className="w-4 h-4 text-primary" />
+                      Paste Image URL / Web Link
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="imageUrl"
+                        type="url"
+                        placeholder="https://images.unsplash.com/photo-..."
+                        value={formData.imageUrl}
+                        onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
+                        className="text-xs"
+                      />
                       <Button 
                         type="button"
                         variant="outline" 
                         size="sm" 
-                        className="h-8 text-xs gap-1.5 font-bold text-primary border-primary/30 hover:bg-primary/10 shadow-sm"
-                        onClick={() => setIsAiModalOpen(true)}
-                      >
-                        <Sparkles className="w-3.5 h-3.5 text-primary" />
-                        AI Image Search
-                      </Button>
-                      <Button 
-                        type="button"
-                        variant="outline" 
-                        size="sm" 
-                        className="h-8 text-xs gap-1.5"
+                        className="h-10 text-xs gap-1.5 shrink-0"
                         onClick={() => fileInputRef.current?.click()}
                       >
                         <Upload className="w-3.5 h-3.5" />
-                        Upload Device
+                        Upload File
                       </Button>
                     </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Paste any web image URL or click Upload File to select an image from your computer.
+                    </p>
                     <input 
                       type="file" 
                       ref={fileInputRef} 
@@ -308,7 +298,7 @@ export default function CatalogPage() {
                         <Button 
                           variant="destructive" 
                           size="sm" 
-                          className="gap-2"
+                          className="gap-2 font-bold"
                           onClick={handleRemoveImage}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -408,21 +398,6 @@ export default function CatalogPage() {
           </div>
         )}
       </main>
-
-      {/* AI Image Search & Candidate Generator Modal */}
-      <AIImageGeneratorModal
-        open={isAiModalOpen}
-        onOpenChange={setIsAiModalOpen}
-        productName={formData.name}
-        onSelectImage={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
-        onOpenSettings={() => setIsOpenRouterSettingsOpen(true)}
-      />
-
-      {/* OpenRouter Free Models Settings Dialog */}
-      <OpenRouterSettingsDialog
-        open={isOpenRouterSettingsOpen}
-        onOpenChange={setIsOpenRouterSettingsOpen}
-      />
     </div>
   );
 }
