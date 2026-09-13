@@ -7,7 +7,7 @@ import { getAuth, signOut } from 'firebase/auth';
 import { useFirebaseApp } from '@/firebase';
 import { 
   Receipt, Coffee, History, LayoutDashboard, 
-  Store, Printer, Tag, ReceiptIndianRupee, LogOut, UserCircle 
+  Store, Printer, Tag, ReceiptIndianRupee, LogOut, UserCircle, Key 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ const navItems = [
   { name: 'Discounts', href: '/discounts', icon: Tag },
   { name: 'Shop Profile', href: '/profile', icon: Store },
   { name: 'Printer', href: '/printer', icon: Printer },
+  { name: 'API Settings', href: '/api-settings', icon: Key },
   { name: 'Account', href: '/account', icon: UserCircle },
 ];
 

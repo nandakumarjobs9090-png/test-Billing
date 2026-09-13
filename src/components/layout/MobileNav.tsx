@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Receipt, Coffee, UserCircle, ReceiptIndianRupee, Store } from 'lucide-react';
+import { LayoutDashboard, Receipt, Coffee, UserCircle, ReceiptIndianRupee, Store, Key } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -11,7 +11,7 @@ const navItems = [
   { name: 'Sale', href: '/billing', icon: Receipt },
   { name: 'Exp', href: '/expenses', icon: ReceiptIndianRupee },
   { name: 'Menu', href: '/catalog', icon: Coffee },
-  { name: 'Shop', href: '/profile', icon: Store },
+  { name: 'API', href: '/api-settings', icon: Key },
   { name: 'Me', href: '/account', icon: UserCircle },
 ];
 
