@@ -1,21 +1,22 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileNav } from '@/components/layout/MobileNav';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { 
   UserCircle, Mail, Monitor, LogOut, 
-  Loader2, CheckCircle2, Fingerprint, Globe
+  Loader2, CheckCircle2, Fingerprint, Globe, Sparkles, Key
 } from 'lucide-react';
 import { useUser, useFirebaseApp } from '@/firebase';
 import { getAuth, signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
+import { OpenRouterSettingsDialog } from '@/components/OpenRouterSettingsDialog';
+import { getOpenRouterApiKey, getSelectedFreeModel } from '@/lib/openrouter';
 
 export default function AccountPage() {
   const { user, isUserLoading } = useUser();
@@ -24,10 +25,13 @@ export default function AccountPage() {
   const { toast } = useToast();
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isOpenRouterOpen, setIsOpenRouterOpen] = useState(false);
+  const [openRouterKey, setOpenRouterKey] = useState('');
+  const [selectedModel, setSelectedModel] = useState('');
   const [deviceInfo, setDeviceInfo] = useState({ os: 'Unknown OS', browser: 'Unknown Browser' });
 
   useEffect(() => {
-    // Client-side only check for device info to avoid hydration mismatch
+    // Client-side info check
     const ua = window.navigator.userAgent;
     let os = "Unknown OS";
     if (ua.indexOf("Win") !== -1) os = "Windows";
@@ -43,6 +47,8 @@ export default function AccountPage() {
     else if (ua.indexOf("Edge") !== -1) browser = "Microsoft Edge";
 
     setDeviceInfo({ os, browser });
+    setOpenRouterKey(getOpenRouterApiKey());
+    setSelectedModel(getSelectedFreeModel());
   }, []);
 
   const handleRemoveDevice = async () => {
@@ -80,7 +86,7 @@ export default function AccountPage() {
       <main className="p-6 md:p-8 max-w-2xl mx-auto">
         <header className="mb-8 text-center md:text-left">
           <h2 className="text-3xl font-headline font-bold">Account Settings</h2>
-          <p className="text-muted-foreground">Manage your credentials and active sessions.</p>
+          <p className="text-muted-foreground">Manage your credentials, AI integration keys, and active sessions.</p>
         </header>
 
         {isUserLoading || !user ? (
@@ -89,6 +95,49 @@ export default function AccountPage() {
           </div>
         ) : (
           <div className="space-y-6">
+            {/* OpenRouter AI Settings Card */}
+            <Card className="border-none shadow-sm overflow-hidden border-l-4 border-l-primary">
+              <CardHeader className="bg-primary/5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 font-headline">
+                      <Sparkles className="w-5 h-5 text-primary" />
+                      OpenRouter Free AI Key
+                    </CardTitle>
+                    <CardDescription>Configure OpenRouter API key to access free AI models.</CardDescription>
+                  </div>
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 font-bold text-xs"
+                    onClick={() => setIsOpenRouterOpen(true)}
+                  >
+                    <Key className="w-4 h-4 text-primary" />
+                    Configure Key
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-3">
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border">
+                  <div>
+                    <p className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Key Status</p>
+                    <p className="font-bold text-sm">
+                      {openRouterKey ? "Key Configured (••••••••)" : "No Key Configured"}
+                    </p>
+                  </div>
+                  {openRouterKey ? (
+                    <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none">Ready</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-amber-600 border-amber-300">Free Models Only</Badge>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <span className="font-bold">Active Free Model:</span>
+                  <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-[11px]">{selectedModel}</code>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card className="border-none shadow-sm overflow-hidden">
               <CardHeader className="bg-primary/5">
                 <CardTitle className="flex items-center gap-2 font-headline">
@@ -172,6 +221,17 @@ export default function AccountPage() {
           </div>
         )}
       </main>
+
+      <OpenRouterSettingsDialog
+        open={isOpenRouterOpen}
+        onOpenChange={(isOpen) => {
+          setIsOpenRouterOpen(isOpen);
+          if (!isOpen) {
+            setOpenRouterKey(getOpenRouterApiKey());
+            setSelectedModel(getSelectedFreeModel());
+          }
+        }}
+      />
     </div>
   );
 }
